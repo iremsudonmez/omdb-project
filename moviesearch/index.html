@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .search-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+            .search-area input {
+                flex: 1;
+                padding: 10px;
+                font-size: 16px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            .search-area button {
+                padding: 10px 20px;
+                font-size: 16px;
+                background: #333;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+                .search-area button:hover {
+                    background: #555;
+                }
+
+        #error {
+            display: none;
+            color: red;
+            margin-bottom: 20px;
+        }
+
+        #result {
+            display: none;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+            #result img {
+                max-width: 200px;
+                display: block;
+                margin-bottom: 16px;
+            }
+
+            #result h2 {
+                margin: 0 0 8px;
+            }
+
+            #result p {
+                margin: 6px 0;
+                color: #333;
+            }
+
+                #result p span {
+                    font-weight: bold;
+                }
+    </style>
+</head>
+<body>
+
+    <h1>Movie Search</h1>
+
+    <div class="search-area">
+        <input type="text" id="searchInput" placeholder="Enter a movie title..." />
+        <button id="searchBtn">Search</button>
+    </div>
+
+    <p id="error"></p>
+
+    <div id="result">
+        <img id="poster" src="" alt="Movie Poster" />
+        <h2 id="title"></h2>
+        <p><span>Year:</span> <span id="year"></span></p>
+        <p><span>Genre:</span> <span id="genre"></span></p>
+        <p><span>Director:</span> <span id="director"></span></p>
+        <p><span>Plot:</span> <span id="plot"></span></p>
+    </div>
+
+    <script>
+        const API_KEY = '9a7ad506'; 
+
+    const input     = document.getElementById('searchInput');
+    const btn       = document.getElementById('searchBtn');
+    const errorEl   = document.getElementById('error');
+    const resultEl  = document.getElementById('result');
+
+    function showError(msg) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = msg;
+      resultEl.style.display = 'none';
+    }
+
+    function showResult(data) {
+      errorEl.style.display = 'none';
+      resultEl.style.display = 'block';
+
+      document.getElementById('title').textContent    = data.Title;
+      document.getElementById('year').textContent     = data.Year;
+      document.getElementById('genre').textContent    = data.Genre;
+      document.getElementById('director').textContent = data.Director;
+      document.getElementById('plot').textContent     = data.Plot;
+
+      const poster = document.getElementById('poster');
+      if (data.Poster && data.Poster !== 'N/A') {
+        poster.src = data.Poster;
+        poster.style.display = 'block';
+      } else {
+        poster.style.display = 'none';
+      }
+    }
+
+    async function searchMovie() {
+      const query = input.value.trim();
+
+      if (!query) {
+        showError('Please enter a movie title.');
+        return;
+      }
+
+      try {
+        const url = `https://www.omdbapi.com/?t=${encodeURIComponent(query)}&plot=full&apikey=${API_KEY}`;
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        if (data.Response === 'False') {
+          showError('Movie not found. Try a different title.');
+        } else {
+          showResult(data);
+          // Son aramayı kaydet
+          localStorage.setItem('lastSearch', query);
+          history.replaceState(null, '', '?q=' + encodeURIComponent(query));
+        }
+      } catch (err) {
+        showError('Something went wrong. Check your internet connection.');
+      }
+    }
+
+    // Buton ve Enter tuşu
+    btn.addEventListener('click', searchMovie);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') searchMovie();
+    });
+
+    // Sayfa yenilenince son aramayı geri yükle
+    window.addEventListener('load', function() {
+      const params = new URLSearchParams(window.location.search);
+      const last   = params.get('q') || localStorage.getItem('lastSearch');
+      if (last) {
+        input.value = last;
+        searchMovie();
+      }
+    });
+    </script>
+
+</body>
+</html>
